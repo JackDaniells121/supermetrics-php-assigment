@@ -1,12 +1,32 @@
 <?php
+function sanitize($field) {
+    $cleanField = filter_var($field, FILTER_VALIDATE_EMAIL);
+
+    if ($cleanField != $field){
+        return false;
+    }
+    return $cleanField;
+}
 
 $masterEmail = $_REQUEST['email'] ?? $_REQUEST['masterEmail'] ?? 'unknown';
 
 echo 'The master email is ' . $masterEmail . '\n';
 
-$conn = mysqli_connect('localhost', 'root', 'sldjfpoweifns', 'my_database');
+$validEmail = sanitize($masterEmail);
 
-$res = mysqli_query($conn, "SELECT * FROM users WHERE email='" . $masterEmail . "'");
-$row = mysqli_fetch_row($res);
+if ($validEmail) {
 
-echo $row['username'] . "\n";
+    $conn = mysqli_connect('localhost', 'root', 'sldjfpoweifns', 'my_database');
+
+    if ($conn) {
+        $stmt = $conn->prepare('SELECT * FROM users WHERE email = ?');
+        $stmt->bind_param('s', $validEmail);
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        while ($row = $result->fetch_assoc()) {
+            echo $row['username'] . "\n";
+        }
+    }
+}
